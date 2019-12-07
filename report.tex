@@ -1,0 +1,172 @@
+\documentclass[12pt]{article}
+
+\usepackage{fullpage}
+\usepackage{multicol,multirow}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage{color}
+\usepackage[table]{xcolor}
+\usepackage{tikz}
+\usepackage{ulem}
+\usepackage[russian]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1, T2A]{fontenc}
+\usepackage{fullpage}
+\usepackage{multicol,multirow}
+\usepackage{tabularx}
+\usepackage{ulem}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{indentfirst}
+
+% Оригиналный шаблон: http://k806.ru/dalabs/da-report-template-2012.tex
+
+\begin{document}
+
+\section*{Лабораторная работа №\,1 по курсу дискрeтного анализа: сортировка за линейное время}
+
+Выполнил студент группы М80-208Б-18 МАИ \textit{Алексеева Мария}.
+
+\subsection*{Условие}
+\begin{enumerate}
+\item Требуется разработать программу, осуществляющую ввод пар «ключ-значение», их упорядочивание по возрастанию ключа сортировкой подсчетом и вывод отсортированной последовательности. 
+\item Вариант 2-2.
+
+Сортировка подсчетом.
+
+Тип ключа: почтовые индексы.
+
+Тип значения: строка до 2048 символов.
+\end{enumerate}
+
+\subsection*{Метод решения}
+
+\begin{enumerate}
+    \item Данные на вход программе подаются через стандартный поток ввода,   
+    \begin{lstlisting}[language=C++]
+    std::istream &operator>>(std::istream &in, TKeyValue &m) {
+	in >> m.key >> m.value;
+	return in;
+    }
+    \end{lstlisting}
+    \item Так как количесво данных заранее не известно, необходимо будет реализовать вектор (по условию задания стандартный вектор из библиотеки STL использовать запрещается).
+    \item Ключи будут представляться в виде беззнакового числа и в процессе ввода будет видоизменять число, заполняя его нулями при необходимости.      out << std::setw(6) << std::setfill('0') << m.key;.
+    \item Сортировка подсчётом принимает тот же вектор входных данных и максимальное значение ключа, а также создаёт 2 новых массива: \textbf{b}, в который будет записана отсортированная последовательность, и \textbf{c}, в котором подсчитывается число повторений каждого возможного символа в сортируемом разряде ключа.
+\end{enumerate}
+
+\subsection*{Описание программы}
+
+На каждой непустой строке входного файла располагается пара «ключ-значение»,
+поэтому создадим новую структуру \textbf{TKeyValue}, в которой будем хранить ключ и значение.
+
+\begin{table}[!htb]
+\begin{tabular}{|m{8cm}|m{8cm}|}
+\hline
+\multicolumn{2}{|c|}{main.cpp} \\ 
+\hline
+\cellcolor{gray!25} Тип данных       & \cellcolor{gray!25} Значение\\ 
+\hline
+struct TKeyValue & Структура для хранения пары "ключ-значение" \\ 
+\hline
+class TVector & Вектор для хранения структур \textbf{TData}\\
+\hline
+\cellcolor{gray!25} Функция & \cellcolor{gray!25}Значение\\
+\hline
+TVector() & Конструктор класса \textbf{TVector} \\
+\hline
+TVector(size_t) & Конструктор класса \textbf{TVector} \\
+\hline
+$\sim$ TVector() & Деструктор класса \textbf{TVector} \\
+\hline
+void PushBack(TData) & Добавить элемент в конец вектора\\
+\hline
+void CountingSort(size\_t) & Функция сортировки подсчётом\\
+\hline
+int main() & Главная функция, в которой происходит чтение данных, вызов функции сортировки и вывод. \\
+\hline
+\end{tabular}
+\end{table}
+
+\newpage
+
+\subsection*{Дневник отладки}
+
+При создании этой таблицы была использована история посылок.
+\begin{table}[!htb]
+\begin{tabular}{|m{2cm}|m{3cm}|m{10cm}|}
+
+\hline
+\cellcolor{gray!25} время       & \cellcolor{gray!25} ошибка & \cellcolor{gray!25} причина\\ 
+\hline
+2019/11/30 15:15:00 & Превышено время & В главной функции создавался новый результирующий вектор, который копировал отсортированный, что замедляло время работы программы.\\ 
+\hline
+2019/11/30 15:16:49	& Превышено реальное время работы &  Проблема в неоптимизированном выводе. Использованные методы оптимизации: 1) Опция std::ios_base::sync_with_stdio(false), которая отключает синхронизацию потоков Си и С++, т. е. данные перестат копироваться из буфера в буфер. 2) Опция std::cin.tie(nullptr). Она отделяет изначально связанные потоки cin и cout. При их связи один из потоков сбрасывается перед каждой операцией в другом потоке.\\
+\hline
+2019/12/05 12:04:49	 & Превышено реальное время работы &   Изменено редактирование ключа с помощью функций std::setw(6) и std::setfill('0'). До этого использовался массив из 6-ти элементов. \\
+\hline
+2019/12/05 12:16:07	 & Работает & Далее убирались комментарии и лишние функции, используемые только для отладки программы, вводились незначительные косметические изменения. \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection*{Тест производительности}
+
+Для генерации тестов использовалась следующая программа:
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <fstream>
+#include <ctime>
+#include <cmath>
+#include <cstdlib>
+
+int main(int argc, char *argv[]) {
+    std::ofstream file(argv[1]);
+    srand(time(0));
+    size_t size = atoi(argv[2]);
+    char key[6];
+    
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < 6; j++) {
+            key[j] = (char) (rand() % 10 + 48);
+        }
+        
+	int length = rand() % 2050;
+        char data[length];
+        for (int k = 0; k < length-1; k++) {
+            data[k] = (char) (rand() % 26 + 97);
+        }
+	data[length-1] = '\0';
+	file << key << '\t' << data << '\n';
+    }
+    return 0;
+}
+\end{lstlisting}
+
+\begin{tikzpicture}
+	\begin{axis}[ylabel=Время,xlabel=Количество строк, width=15.5cm, height=10cm,grid=both]
+	\addplot coordinates {
+		( 100000, 0.625 )
+		( 90000, 0.585 )
+		( 80000, 0.548 )
+		( 70000, 0.421 )
+		( 60000, 0.359 )
+		( 50000, 0.267 )
+		( 40000, 0.207 )
+		( 30000, 0.201  )
+		( 20000, 0.161  )
+		( 10000, 0.082  )};
+	\addplot coordinates {
+	( 10000, 0.082)
+	( 100000, 0.625 )};
+	\end{axis}
+
+\end{tikzpicture}
+
+
+\subsection*{Выводы}
+
+Данную программу можно использовать для сортировки файлов по ключу, который представляет собой постовый индекс.
+
+В процессе работы я получила ценный опыт отладки программы и её оптимизации при помощи утилиты valgrind. Также разобралась в работе сортировки подсчетом, научилась различать устойчивые сортировки от неустойчивых.
+\end{document}
+
