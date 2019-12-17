@@ -129,7 +129,7 @@ template <typename T> void TVector<T>::PushBack(TValue_type &value) {
 
 	unsigned int next_size = 1;
 	if (storage) {
-		next_size = storageSize * 4;
+		next_size = storageSize * 2;
 	}
 
 	TVector<T> next{next_size};
